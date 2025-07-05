@@ -149,6 +149,8 @@ export const getArtwork = query({
 export const createArtwork = mutation({
   args: {
     userId: v.string(),
+    username: v.string(),
+    userAvatar: v.optional(v.string()),
     title: v.string(),
     description: v.string(),
     price: v.number(),
@@ -179,6 +181,8 @@ export const createArtwork = mutation({
       title: args.title,
       description: args.description,
       artistId: userId,
+      artistName: args.username,
+      artistsAvatar: args.userAvatar,
       price: args.price,
       dimensions: args.dimensions,
       medium: args.medium,

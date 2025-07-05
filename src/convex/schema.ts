@@ -7,6 +7,8 @@ const applicationTables = {
     title: v.string(),
     description: v.string(),
     artistId: v.string(),
+    artistName: v.string(),
+    artistsAvatar: v.optional(v.string()),
     price: v.number(),
     dimensions: v.object({
       width: v.number(),
