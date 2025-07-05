@@ -1,0 +1,391 @@
+import { v } from "convex/values";
+import { query, mutation, internalMutation } from "./_generated/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
+import { internal } from "./_generated/api";
+
+// Get all artworks with pagination and filters
+export const getArtworks = query({
+  args: {
+    category: v.optional(v.string()),
+    status: v.optional(v.string()),
+    artistId: v.optional(v.id("users")),
+    featured: v.optional(v.boolean()),
+    limit: v.optional(v.number()),
+    cursor: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    let artworks;
+
+    if (args.category) {
+      artworks = await ctx.db
+        .query("artworks")
+        .withIndex("by_category", (q) => q.eq("category", args.category!))
+        .order("desc")
+        .take(args.limit || 20);
+    } else if (args.status) {
+      artworks = await ctx.db
+        .query("artworks")
+        .withIndex("by_status", (q) => q.eq("status", args.status as any))
+        .order("desc")
+        .take(args.limit || 20);
+    } else if (args.artistId) {
+      artworks = await ctx.db
+        .query("artworks")
+        .withIndex("by_artist", (q) => q.eq("artistId", args.artistId!))
+        .order("desc")
+        .take(args.limit || 20);
+    } else if (args.featured !== undefined) {
+      artworks = await ctx.db
+        .query("artworks")
+        .withIndex("by_featured", (q) => q.eq("featured", args.featured!))
+        .order("desc")
+        .take(args.limit || 20);
+    } else {
+      artworks = await ctx.db.query("artworks").order("desc").take(args.limit || 20);
+    }
+
+    // Get artist info and image URLs for each artwork
+    const artworksWithDetails = await Promise.all(
+      artworks.map(async (artwork) => {
+        const artist = await ctx.db.get(artwork.artistId);
+        const profile = await ctx.db
+          .query("profiles")
+          .withIndex("by_user", (q) => q.eq("userId", artwork.artistId))
+          .first();
+
+        const imageUrls = await Promise.all(
+          artwork.images.map(async (imageId) => {
+            const url = await ctx.storage.getUrl(imageId);
+            return url;
+          })
+        );
+
+        return {
+          ...artwork,
+          artist: {
+            name: artist?.name || "Unknown Artist",
+            email: artist?.email,
+            isVerified: profile?.isVerified || false,
+          },
+          imageUrls: imageUrls.filter(Boolean),
+        };
+      })
+    );
+
+    return artworksWithDetails;
+  },
+});
+
+// Search artworks
+export const searchArtworks = query({
+  args: {
+    searchTerm: v.string(),
+    category: v.optional(v.string()),
+    artistId: v.optional(v.id("users")),
+    status: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    let searchQuery = ctx.db
+      .query("artworks")
+      .withSearchIndex("search_artworks", (q) => q.search("title", args.searchTerm));
+
+    if (args.category) {
+      searchQuery = searchQuery.filter((q) => q.eq(q.field("category"), args.category));
+    }
+    if (args.artistId) {
+      searchQuery = searchQuery.filter((q) => q.eq(q.field("artistId"), args.artistId));
+    }
+    if (args.status) {
+      searchQuery = searchQuery.filter((q) => q.eq(q.field("status"), args.status));
+    }
+
+    const results = await searchQuery.take(50);
+
+    // Get additional details
+    const artworksWithDetails = await Promise.all(
+      results.map(async (artwork) => {
+        const artist = await ctx.db.get(artwork.artistId);
+        const imageUrls = await Promise.all(
+          artwork.images.map(async (imageId) => {
+            const url = await ctx.storage.getUrl(imageId);
+            return url;
+          })
+        );
+
+        return {
+          ...artwork,
+          artist: {
+            name: artist?.name || "Unknown Artist",
+            email: artist?.email,
+          },
+          imageUrls: imageUrls.filter(Boolean),
+        };
+      })
+    );
+
+    return artworksWithDetails;
+  },
+});
+
+// Get single artwork with full details
+export const getArtwork = query({
+  args: { id: v.id("artworks") },
+  handler: async (ctx, args) => {
+    const artwork = await ctx.db.get(args.id);
+    if (!artwork) return null;
+
+    const artist = await ctx.db.get(artwork.artistId);
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user", (q) => q.eq("userId", artwork.artistId))
+      .first();
+
+    const imageUrls = await Promise.all(
+      artwork.images.map(async (imageId) => {
+        const url = await ctx.storage.getUrl(imageId);
+        return url;
+      })
+    );
+
+    // Get current bids if it's an auction
+    const bids: any[] = [];
+    if (artwork.isAuction) {
+      const artworkBids = await ctx.db
+        .query("bids")
+        .withIndex("by_artwork", (q) => q.eq("artworkId", args.id))
+        .order("desc")
+        .take(10);
+
+      const bidsWithBidders = await Promise.all(
+        artworkBids.map(async (bid) => {
+          const bidder = await ctx.db.get(bid.bidderId);
+          return {
+            ...bid,
+            bidderName: bidder?.name || "Anonymous",
+          };
+        })
+      );
+      bids.push(...bidsWithBidders);
+    }
+
+    return {
+      ...artwork,
+      artist: {
+        name: artist?.name || "Unknown Artist",
+        email: artist?.email,
+        bio: profile?.bio,
+        isVerified: profile?.isVerified || false,
+      },
+      imageUrls: imageUrls.filter(Boolean),
+      bids,
+    };
+  },
+});
+
+// Create artwork (artist only)
+export const createArtwork = mutation({
+  args: {
+    title: v.string(),
+    description: v.string(),
+    price: v.number(),
+    dimensions: v.object({
+      width: v.number(),
+      height: v.number(),
+      depth: v.optional(v.number()),
+      unit: v.string(),
+    }),
+    medium: v.string(),
+    year: v.number(),
+    category: v.string(),
+    tags: v.array(v.string()),
+    images: v.array(v.id("_storage")),
+    isAuction: v.boolean(),
+    auctionDuration: v.optional(v.number()), // hours
+    reservePrice: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    // Check if user is an artist
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first();
+
+    if (!profile || profile.role !== "artist") {
+      throw new Error("Only artists can create artworks");
+    }
+
+    const auctionEndTime = args.isAuction && args.auctionDuration
+      ? Date.now() + (args.auctionDuration * 60 * 60 * 1000)
+      : undefined;
+
+    const artworkId = await ctx.db.insert("artworks", {
+      title: args.title,
+      description: args.description,
+      artistId: userId,
+      price: args.price,
+      dimensions: args.dimensions,
+      medium: args.medium,
+      year: args.year,
+      category: args.category,
+      tags: args.tags,
+      images: args.images,
+      status: args.isAuction ? "auction" : "available",
+      isAuction: args.isAuction,
+      auctionEndTime,
+      reservePrice: args.reservePrice,
+      currentBid: args.isAuction ? args.reservePrice : undefined,
+      bidCount: 0,
+      views: 0,
+      featured: false,
+    });
+
+    return artworkId;
+  },
+});
+
+// Update artwork
+export const updateArtwork = mutation({
+  args: {
+    id: v.id("artworks"),
+    title: v.optional(v.string()),
+    description: v.optional(v.string()),
+    price: v.optional(v.number()),
+    status: v.optional(v.union(
+      v.literal("available"),
+      v.literal("sold"),
+      v.literal("auction"),
+      v.literal("reserved")
+    )),
+    featured: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const artwork = await ctx.db.get(args.id);
+    if (!artwork) throw new Error("Artwork not found");
+
+    // Check ownership
+    if (artwork.artistId !== userId) {
+      throw new Error("You can only update your own artworks");
+    }
+
+    const updates: any = {};
+    if (args.title !== undefined) updates.title = args.title;
+    if (args.description !== undefined) updates.description = args.description;
+    if (args.price !== undefined) updates.price = args.price;
+    if (args.status !== undefined) updates.status = args.status;
+    if (args.featured !== undefined) updates.featured = args.featured;
+
+    await ctx.db.patch(args.id, updates);
+    return args.id;
+  },
+});
+
+// Delete artwork
+export const deleteArtwork = mutation({
+  args: { id: v.id("artworks") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const artwork = await ctx.db.get(args.id);
+    if (!artwork) throw new Error("Artwork not found");
+
+    // Check ownership
+    if (artwork.artistId !== userId) {
+      throw new Error("You can only delete your own artworks");
+    }
+
+    // Delete related bids
+    const bids = await ctx.db
+      .query("bids")
+      .withIndex("by_artwork", (q) => q.eq("artworkId", args.id))
+      .collect();
+
+    for (const bid of bids) {
+      await ctx.db.delete(bid._id);
+    }
+
+    await ctx.db.delete(args.id);
+    return args.id;
+  },
+});
+
+// Internal function to increment views
+export const incrementViews = internalMutation({
+  args: { id: v.id("artworks") },
+  handler: async (ctx, args) => {
+    const artwork = await ctx.db.get(args.id);
+    if (artwork) {
+      await ctx.db.patch(args.id, { views: artwork.views + 1 });
+    }
+  },
+});
+
+// Get artist's artworks
+export const getArtistArtworks = query({
+  args: { artistId: v.id("users") },
+  handler: async (ctx, args) => {
+    const artworks = await ctx.db
+      .query("artworks")
+      .withIndex("by_artist", (q) => q.eq("artistId", args.artistId))
+      .order("desc")
+      .collect();
+
+    const artworksWithImages = await Promise.all(
+      artworks.map(async (artwork) => {
+        const imageUrls = await Promise.all(
+          artwork.images.map(async (imageId) => {
+            const url = await ctx.storage.getUrl(imageId);
+            return url;
+          })
+        );
+
+        return {
+          ...artwork,
+          imageUrls: imageUrls.filter(Boolean),
+        };
+      })
+    );
+
+    return artworksWithImages;
+  },
+});
+
+// Get featured artworks
+export const getFeaturedArtworks = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const artworks = await ctx.db
+      .query("artworks")
+      .withIndex("by_featured", (q) => q.eq("featured", true))
+      .order("desc")
+      .take(args.limit || 10);
+
+    const artworksWithDetails = await Promise.all(
+      artworks.map(async (artwork) => {
+        const artist = await ctx.db.get(artwork.artistId);
+        const imageUrls = await Promise.all(
+          artwork.images.map(async (imageId) => {
+            const url = await ctx.storage.getUrl(imageId);
+            return url;
+          })
+        );
+
+        return {
+          ...artwork,
+          artist: {
+            name: artist?.name || "Unknown Artist",
+          },
+          imageUrls: imageUrls.filter(Boolean),
+        };
+      })
+    );
+
+    return artworksWithDetails;
+  },
+});
