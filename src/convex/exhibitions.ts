@@ -1,6 +1,5 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
 
 // Get exhibitions with filters
 export const getExhibitions = query({
@@ -38,7 +37,6 @@ export const getExhibitions = query({
     // Get curator info and cover image URLs
     const exhibitionsWithDetails = await Promise.all(
       exhibitions.map(async (exhibition) => {
-        const curator = await ctx.db.get(exhibition.curatorId);
         let coverImageUrl = null;
         if (exhibition.coverImage) {
           coverImageUrl = await ctx.storage.getUrl(exhibition.coverImage);
@@ -49,10 +47,6 @@ export const getExhibitions = query({
 
         return {
           ...exhibition,
-          curator: {
-            name: curator?.name || "Unknown Curator",
-            email: curator?.email,
-          },
           coverImageUrl,
           artworkCount,
         };
@@ -70,7 +64,6 @@ export const getExhibition = query({
     const exhibition = await ctx.db.get(args.id);
     if (!exhibition) return null;
 
-    const curator = await ctx.db.get(exhibition.curatorId);
     let coverImageUrl = null;
     if (exhibition.coverImage) {
       coverImageUrl = await ctx.storage.getUrl(exhibition.coverImage);
@@ -82,7 +75,6 @@ export const getExhibition = query({
         const artwork = await ctx.db.get(artworkId);
         if (!artwork) return null;
 
-        const artist = await ctx.db.get(artwork.artistId);
         const imageUrls = await Promise.all(
           artwork.images.slice(0, 1).map(async (imageId) => {
             const url = await ctx.storage.getUrl(imageId);
@@ -92,9 +84,6 @@ export const getExhibition = query({
 
         return {
           ...artwork,
-          artist: {
-            name: artist?.name || "Unknown Artist",
-          },
           imageUrls: imageUrls.filter(Boolean),
         };
       })
@@ -102,10 +91,6 @@ export const getExhibition = query({
 
     return {
       ...exhibition,
-      curator: {
-        name: curator?.name || "Unknown Curator",
-        email: curator?.email,
-      },
       coverImageUrl,
       artworks: artworks.filter(Boolean),
     };
@@ -115,6 +100,7 @@ export const getExhibition = query({
 // Create exhibition (curator only)
 export const createExhibition = mutation({
   args: {
+    userId: v.string(),
     title: v.string(),
     description: v.string(),
     startDate: v.number(),
@@ -130,7 +116,7 @@ export const createExhibition = mutation({
     coverImage: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    const { userId } = args;
     if (!userId) throw new Error("Not authenticated");
 
     // For now, any authenticated user can create exhibitions

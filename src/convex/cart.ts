@@ -1,12 +1,11 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
 
 // Get user's cart
 export const getCart = query({
-  args: {},
-  handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const userId = args.userId;
     if (!userId) return [];
 
     const cartItems = await ctx.db
@@ -20,19 +19,9 @@ export const getCart = query({
       const artwork = await ctx.db.get(item.artworkId);
       if (!artwork) continue;
 
-      const artist = await ctx.db.get(artwork.artistId);
-      let imageUrl = null;
-      if (artwork.images.length > 0) {
-        imageUrl = await ctx.storage.getUrl(artwork.images[0]);
-      }
-
       cartWithDetails.push({
         ...item,
-        artwork: {
-          ...artwork,
-          imageUrl,
-          artistName: artist?.name || "Unknown Artist",
-        },
+        artwork
       });
     }
 
@@ -43,11 +32,12 @@ export const getCart = query({
 // Add item to cart
 export const addToCart = mutation({
   args: {
+    userId: v.string(),
     artworkId: v.id("artworks"),
     quantity: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    const { userId } = args;
     if (!userId) throw new Error("Not authenticated");
 
     const artwork = await ctx.db.get(args.artworkId);
@@ -89,9 +79,9 @@ export const addToCart = mutation({
 
 // Remove item from cart
 export const removeFromCart = mutation({
-  args: { itemId: v.id("cartItems") },
+  args: { userId: v.string(), itemId: v.id("cartItems") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    const { userId } = args;
     if (!userId) throw new Error("Not authenticated");
 
     const item = await ctx.db.get(args.itemId);
@@ -107,11 +97,12 @@ export const removeFromCart = mutation({
 // Update cart item quantity
 export const updateCartQuantity = mutation({
   args: {
+    userId: v.string(),
     itemId: v.id("cartItems"),
     quantity: v.number(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    const { userId } = args;
     if (!userId) throw new Error("Not authenticated");
 
     const item = await ctx.db.get(args.itemId);
@@ -131,9 +122,9 @@ export const updateCartQuantity = mutation({
 
 // Clear cart
 export const clearCart = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const { userId } = args;
     if (!userId) throw new Error("Not authenticated");
 
     const cartItems = await ctx.db
@@ -151,9 +142,9 @@ export const clearCart = mutation({
 
 // Get cart total
 export const getCartTotal = query({
-  args: {},
-  handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const { userId } = args;
     if (!userId) return { total: 0, itemCount: 0 };
 
     const cartItems = await ctx.db

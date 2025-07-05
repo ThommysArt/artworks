@@ -1,16 +1,17 @@
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 import { query, mutation, internalMutation } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
 
 // Place a bid on an artwork
 export const placeBid = mutation({
   args: {
+    userId: v.string(),
     artworkId: v.id("artworks"),
     amount: v.number(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    const { userId } = args;
     if (!userId) throw new Error("Not authenticated");
 
     const artwork = await ctx.db.get(args.artworkId);
@@ -80,32 +81,19 @@ export const placeBid = mutation({
 export const getArtworkBids = query({
   args: { artworkId: v.id("artworks") },
   handler: async (ctx, args) => {
-    const bids = await ctx.db
+    return await ctx.db
       .query("bids")
       .withIndex("by_artwork", (q) => q.eq("artworkId", args.artworkId))
       .order("desc")
       .collect();
-
-    const bidsWithBidders = await Promise.all(
-      bids.map(async (bid) => {
-        const bidder = await ctx.db.get(bid.bidderId);
-        return {
-          ...bid,
-          bidderName: bidder?.name || "Anonymous",
-          bidderEmail: bidder?.email,
-        };
-      })
-    );
-
-    return bidsWithBidders;
   },
 });
 
 // Get user's bids
 export const getUserBids = query({
-  args: {},
-  handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const { userId } = args;
     if (!userId) return [];
 
     const bids = await ctx.db
@@ -116,7 +104,7 @@ export const getUserBids = query({
 
     const bidsWithArtworks = await Promise.all(
       bids.map(async (bid) => {
-        const artwork = await ctx.db.get(bid.artworkId);
+        const artwork = bid.artworkId ? await ctx.db.get(bid.artworkId) : null;
         let imageUrl = null;
         if (artwork && artwork.images.length > 0) {
           imageUrl = await ctx.storage.getUrl(artwork.images[0]);
@@ -208,7 +196,6 @@ export const getActiveAuctions = query({
 
     const auctionsWithDetails = await Promise.all(
       auctions.map(async (artwork) => {
-        const artist = await ctx.db.get(artwork.artistId);
         const imageUrls = await Promise.all(
           artwork.images.slice(0, 1).map(async (imageId) => {
             const url = await ctx.storage.getUrl(imageId);
@@ -220,9 +207,6 @@ export const getActiveAuctions = query({
 
         return {
           ...artwork,
-          artist: {
-            name: artist?.name || "Unknown Artist",
-          },
           imageUrls: imageUrls.filter(Boolean),
           timeRemaining,
         };

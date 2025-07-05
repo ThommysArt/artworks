@@ -1,33 +1,12 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { authTables } from "@convex-dev/auth/server";
 
 const applicationTables = {
-  // User profiles extending auth
-  profiles: defineTable({
-    userId: v.id("users"),
-    role: v.union(v.literal("artist"), v.literal("user")),
-    bio: v.optional(v.string()),
-    website: v.optional(v.string()),
-    location: v.optional(v.string()),
-    avatar: v.optional(v.id("_storage")),
-    isVerified: v.boolean(),
-    shippingAddresses: v.optional(v.array(v.object({
-      name: v.string(),
-      street: v.string(),
-      city: v.string(),
-      state: v.string(),
-      zipCode: v.string(),
-      country: v.string(),
-      isDefault: v.boolean(),
-    }))),
-  }).index("by_user", ["userId"]),
-
   // Artworks
   artworks: defineTable({
     title: v.string(),
     description: v.string(),
-    artistId: v.id("users"),
+    artistId: v.string(),
     price: v.number(),
     dimensions: v.object({
       width: v.number(),
@@ -66,7 +45,7 @@ const applicationTables = {
   // Bids
   bids: defineTable({
     artworkId: v.id("artworks"),
-    bidderId: v.id("users"),
+    bidderId: v.string(),
     amount: v.number(),
     isWinning: v.boolean(),
   })
@@ -78,7 +57,7 @@ const applicationTables = {
   exhibitions: defineTable({
     title: v.string(),
     description: v.string(),
-    curatorId: v.id("users"),
+    curatorId: v.string(),
     startDate: v.number(),
     endDate: v.number(),
     location: v.optional(v.object({
@@ -108,7 +87,7 @@ const applicationTables = {
 
   // Collections (user favorites/wishlists)
   collections: defineTable({
-    userId: v.id("users"),
+    userId: v.string(),
     name: v.string(),
     description: v.optional(v.string()),
     artworkIds: v.array(v.id("artworks")),
@@ -118,7 +97,7 @@ const applicationTables = {
 
   // Shopping cart
   cartItems: defineTable({
-    userId: v.id("users"),
+    userId: v.string(),
     artworkId: v.id("artworks"),
     quantity: v.number(),
   })
@@ -127,7 +106,7 @@ const applicationTables = {
 
   // Orders
   orders: defineTable({
-    userId: v.id("users"),
+    userId: v.string(),
     artworkIds: v.array(v.id("artworks")),
     totalAmount: v.number(),
     status: v.union(
@@ -152,7 +131,7 @@ const applicationTables = {
   // Reviews
   reviews: defineTable({
     artworkId: v.id("artworks"),
-    reviewerId: v.id("users"),
+    reviewerId: v.string(),
     rating: v.number(),
     comment: v.optional(v.string()),
   })
@@ -167,7 +146,7 @@ const applicationTables = {
       v.literal("artist_profile_view")
     ),
     entityId: v.string(),
-    userId: v.optional(v.id("users")),
+    userId: v.optional(v.string()),
     metadata: v.optional(v.object({
       source: v.optional(v.string()),
       duration: v.optional(v.number()),
@@ -178,6 +157,5 @@ const applicationTables = {
 };
 
 export default defineSchema({
-  ...authTables,
   ...applicationTables,
 });

@@ -1,6 +1,6 @@
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 import { query, mutation, internalMutation } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "./_generated/api";
 
 // Get all artworks with pagination and filters
@@ -47,26 +47,15 @@ export const getArtworks = query({
     // Get artist info and image URLs for each artwork
     const artworksWithDetails = await Promise.all(
       artworks.map(async (artwork) => {
-        const artist = await ctx.db.get(artwork.artistId);
-        const profile = await ctx.db
-          .query("profiles")
-          .withIndex("by_user", (q) => q.eq("userId", artwork.artistId))
-          .first();
-
         const imageUrls = await Promise.all(
           artwork.images.map(async (imageId) => {
-            const url = await ctx.storage.getUrl(imageId);
+            const url = await ctx.storage.getUrl(imageId as Id<"_storage">);
             return url;
           })
         );
 
         return {
           ...artwork,
-          artist: {
-            name: artist?.name || "Unknown Artist",
-            email: artist?.email,
-            isVerified: profile?.isVerified || false,
-          },
           imageUrls: imageUrls.filter(Boolean),
         };
       })
@@ -104,20 +93,15 @@ export const searchArtworks = query({
     // Get additional details
     const artworksWithDetails = await Promise.all(
       results.map(async (artwork) => {
-        const artist = await ctx.db.get(artwork.artistId);
         const imageUrls = await Promise.all(
           artwork.images.map(async (imageId) => {
-            const url = await ctx.storage.getUrl(imageId);
+            const url = await ctx.storage.getUrl(imageId as Id<"_storage">);
             return url;
           })
         );
 
         return {
           ...artwork,
-          artist: {
-            name: artist?.name || "Unknown Artist",
-            email: artist?.email,
-          },
           imageUrls: imageUrls.filter(Boolean),
         };
       })
@@ -131,18 +115,13 @@ export const searchArtworks = query({
 export const getArtwork = query({
   args: { id: v.id("artworks") },
   handler: async (ctx, args) => {
-    const artwork = await ctx.db.get(args.id);
+    const artworkId = args.id as Id<"artworks">;
+    const artwork = artworkId ? await ctx.db.get(artworkId) : null;
     if (!artwork) return null;
-
-    const artist = await ctx.db.get(artwork.artistId);
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_user", (q) => q.eq("userId", artwork.artistId))
-      .first();
 
     const imageUrls = await Promise.all(
       artwork.images.map(async (imageId) => {
-        const url = await ctx.storage.getUrl(imageId);
+        const url = await ctx.storage.getUrl(imageId as Id<"_storage">);
         return url;
       })
     );
@@ -155,27 +134,11 @@ export const getArtwork = query({
         .withIndex("by_artwork", (q) => q.eq("artworkId", args.id))
         .order("desc")
         .take(10);
-
-      const bidsWithBidders = await Promise.all(
-        artworkBids.map(async (bid) => {
-          const bidder = await ctx.db.get(bid.bidderId);
-          return {
-            ...bid,
-            bidderName: bidder?.name || "Anonymous",
-          };
-        })
-      );
-      bids.push(...bidsWithBidders);
+      bids.push(...artworkBids);
     }
 
     return {
       ...artwork,
-      artist: {
-        name: artist?.name || "Unknown Artist",
-        email: artist?.email,
-        bio: profile?.bio,
-        isVerified: profile?.isVerified || false,
-      },
       imageUrls: imageUrls.filter(Boolean),
       bids,
     };
@@ -185,6 +148,7 @@ export const getArtwork = query({
 // Create artwork (artist only)
 export const createArtwork = mutation({
   args: {
+    userId: v.string(),
     title: v.string(),
     description: v.string(),
     price: v.number(),
@@ -204,18 +168,8 @@ export const createArtwork = mutation({
     reservePrice: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    const { userId } = args;
     if (!userId) throw new Error("Not authenticated");
-
-    // Check if user is an artist
-    const profile = await ctx.db
-      .query("profiles")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
-      .first();
-
-    if (!profile || profile.role !== "artist") {
-      throw new Error("Only artists can create artworks");
-    }
 
     const auctionEndTime = args.isAuction && args.auctionDuration
       ? Date.now() + (args.auctionDuration * 60 * 60 * 1000)
@@ -260,12 +214,14 @@ export const updateArtwork = mutation({
       v.literal("reserved")
     )),
     featured: v.optional(v.boolean()),
+    userId: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    const { userId } = args;
     if (!userId) throw new Error("Not authenticated");
 
-    const artwork = await ctx.db.get(args.id);
+    const artworkId = args.id as Id<"artworks">;
+    const artwork = artworkId ? await ctx.db.get(artworkId) : null;
     if (!artwork) throw new Error("Artwork not found");
 
     // Check ownership
@@ -287,12 +243,13 @@ export const updateArtwork = mutation({
 
 // Delete artwork
 export const deleteArtwork = mutation({
-  args: { id: v.id("artworks") },
+  args: { id: v.id("artworks"), userId: v.string() },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    const { userId } = args;
     if (!userId) throw new Error("Not authenticated");
 
-    const artwork = await ctx.db.get(args.id);
+    const artworkId = args.id as Id<"artworks">;
+    const artwork = artworkId ? await ctx.db.get(artworkId) : null;
     if (!artwork) throw new Error("Artwork not found");
 
     // Check ownership
@@ -319,7 +276,8 @@ export const deleteArtwork = mutation({
 export const incrementViews = internalMutation({
   args: { id: v.id("artworks") },
   handler: async (ctx, args) => {
-    const artwork = await ctx.db.get(args.id);
+    const artworkId = args.id as Id<"artworks">;
+    const artwork = artworkId ? await ctx.db.get(artworkId) : null;
     if (artwork) {
       await ctx.db.patch(args.id, { views: artwork.views + 1 });
     }
@@ -340,7 +298,7 @@ export const getArtistArtworks = query({
       artworks.map(async (artwork) => {
         const imageUrls = await Promise.all(
           artwork.images.map(async (imageId) => {
-            const url = await ctx.storage.getUrl(imageId);
+            const url = await ctx.storage.getUrl(imageId as Id<"_storage">);
             return url;
           })
         );
@@ -368,19 +326,15 @@ export const getFeaturedArtworks = query({
 
     const artworksWithDetails = await Promise.all(
       artworks.map(async (artwork) => {
-        const artist = await ctx.db.get(artwork.artistId);
         const imageUrls = await Promise.all(
           artwork.images.map(async (imageId) => {
-            const url = await ctx.storage.getUrl(imageId);
+            const url = await ctx.storage.getUrl(imageId as Id<"_storage">);
             return url;
           })
         );
 
         return {
           ...artwork,
-          artist: {
-            name: artist?.name || "Unknown Artist",
-          },
           imageUrls: imageUrls.filter(Boolean),
         };
       })

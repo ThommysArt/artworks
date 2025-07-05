@@ -14,13 +14,9 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as artworks from "../artworks.js";
-import type * as auth from "../auth.js";
 import type * as bidding from "../bidding.js";
 import type * as cart from "../cart.js";
 import type * as exhibitions from "../exhibitions.js";
-import type * as http from "../http.js";
-import type * as profiles from "../profiles.js";
-import type * as router from "../router.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -32,13 +28,9 @@ import type * as router from "../router.js";
  */
 declare const fullApi: ApiFromModules<{
   artworks: typeof artworks;
-  auth: typeof auth;
   bidding: typeof bidding;
   cart: typeof cart;
   exhibitions: typeof exhibitions;
-  http: typeof http;
-  profiles: typeof profiles;
-  router: typeof router;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
