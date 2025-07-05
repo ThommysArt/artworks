@@ -102,9 +102,17 @@ export const ArtCard = ({ artwork }: ArtCardProps) => {
       {isAuction && (
         <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800 rounded-md px-3 py-2 mt-1">
           <HammerIcon size={16} className="text-zinc-500" />
-          <span className="text-xs text-zinc-700 dark:text-zinc-200">Current Bid: <span className="font-semibold">${currentBid.toLocaleString()}</span></span>
-          <span className="text-xs text-zinc-500">Reserve: ${reservePrice.toLocaleString()}</span>
-          <span className="text-xs text-zinc-500">Bids: {bidCount}</span>
+          <span className="text-xs text-zinc-700 dark:text-zinc-200">
+            Current Bid: <span className="font-semibold">
+              {typeof currentBid === 'number' ? `$${currentBid.toLocaleString()}` : 'No bids'}
+            </span>
+          </span>
+          <span className="text-xs text-zinc-500">
+            Reserve: {typeof reservePrice === 'number' ? `$${reservePrice.toLocaleString()}` : 'N/A'}
+          </span>
+          {typeof bidCount === 'number' && (
+            <span className="text-xs text-zinc-500">Bids: {bidCount}</span>
+          )}
           {auctionEnds && <span className="text-xs text-zinc-400 ml-auto">Ends: {auctionEnds}</span>}
         </div>
       )}

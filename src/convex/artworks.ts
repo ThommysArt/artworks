@@ -1,7 +1,6 @@
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { query, mutation, internalMutation } from "./_generated/server";
-import { internal } from "./_generated/api";
 
 // Get all artworks with pagination and filters
 export const getArtworks = query({
@@ -44,24 +43,7 @@ export const getArtworks = query({
       artworks = await ctx.db.query("artworks").order("desc").take(args.limit || 20);
     }
 
-    // Get artist info and image URLs for each artwork
-    const artworksWithDetails = await Promise.all(
-      artworks.map(async (artwork) => {
-        const imageUrls = await Promise.all(
-          artwork.images.map(async (imageId) => {
-            const url = await ctx.storage.getUrl(imageId as Id<"_storage">);
-            return url;
-          })
-        );
-
-        return {
-          ...artwork,
-          imageUrls: imageUrls.filter(Boolean),
-        };
-      })
-    );
-
-    return artworksWithDetails;
+    return artworks
   },
 });
 
@@ -164,7 +146,7 @@ export const createArtwork = mutation({
     year: v.number(),
     category: v.string(),
     tags: v.array(v.string()),
-    images: v.array(v.id("_storage")),
+    images: v.array(v.string()),
     isAuction: v.boolean(),
     auctionDuration: v.optional(v.number()), // hours
     reservePrice: v.optional(v.number()),
@@ -292,29 +274,11 @@ export const incrementViews = internalMutation({
 export const getArtistArtworks = query({
   args: { artistId: v.id("users") },
   handler: async (ctx, args) => {
-    const artworks = await ctx.db
+    return await ctx.db
       .query("artworks")
       .withIndex("by_artist", (q) => q.eq("artistId", args.artistId))
       .order("desc")
       .collect();
-
-    const artworksWithImages = await Promise.all(
-      artworks.map(async (artwork) => {
-        const imageUrls = await Promise.all(
-          artwork.images.map(async (imageId) => {
-            const url = await ctx.storage.getUrl(imageId as Id<"_storage">);
-            return url;
-          })
-        );
-
-        return {
-          ...artwork,
-          imageUrls: imageUrls.filter(Boolean),
-        };
-      })
-    );
-
-    return artworksWithImages;
   },
 });
 
@@ -322,28 +286,11 @@ export const getArtistArtworks = query({
 export const getFeaturedArtworks = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    const artworks = await ctx.db
+    return await ctx.db
       .query("artworks")
       .withIndex("by_featured", (q) => q.eq("featured", true))
       .order("desc")
       .take(args.limit || 10);
-
-    const artworksWithDetails = await Promise.all(
-      artworks.map(async (artwork) => {
-        const imageUrls = await Promise.all(
-          artwork.images.map(async (imageId) => {
-            const url = await ctx.storage.getUrl(imageId as Id<"_storage">);
-            return url;
-          })
-        );
-
-        return {
-          ...artwork,
-          imageUrls: imageUrls.filter(Boolean),
-        };
-      })
-    );
-
-    return artworksWithDetails;
   },
 });
+

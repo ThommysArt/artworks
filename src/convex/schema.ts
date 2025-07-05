@@ -20,7 +20,7 @@ const applicationTables = {
     year: v.number(),
     category: v.string(),
     tags: v.array(v.string()),
-    images: v.array(v.id("_storage")),
+    images: v.array(v.string()),
     status: v.union(
       v.literal("available"),
       v.literal("sold"),
