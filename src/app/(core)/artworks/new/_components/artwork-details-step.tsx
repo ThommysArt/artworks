@@ -162,14 +162,16 @@ export function ArtworkDetailsStep({ form }: { form: any }) {
           render={({ field }) => (
             <FormItem className="flex-1">
               <FormLabel>Tags</FormLabel>
-              <TagSelector<string>
-                availableTags={["painting", "sculpture", "photography", "architecture", "design", "illustration"]}
-                selectedTags={field.value || []}
-                onChange={field.onChange}
-                getValue={t => t}
-                getLabel={t => t}
-                createTag={t => t}
-              />
+              <FormControl>
+                <TagSelector<string>
+                  availableTags={["painting", "sculpture", "photography", "architecture", "design", "illustration"]}
+                  selectedTags={field.value || []}
+                  onChange={field.onChange}
+                  getValue={t => t}
+                  getLabel={t => t}
+                  createTag={t => t}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

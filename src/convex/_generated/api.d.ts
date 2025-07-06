@@ -17,6 +17,7 @@ import type * as artworks from "../artworks.js";
 import type * as bidding from "../bidding.js";
 import type * as cart from "../cart.js";
 import type * as exhibitions from "../exhibitions.js";
+import type * as media from "../media.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   bidding: typeof bidding;
   cart: typeof cart;
   exhibitions: typeof exhibitions;
+  media: typeof media;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

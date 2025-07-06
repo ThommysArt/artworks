@@ -70,26 +70,7 @@ export const searchArtworks = query({
       searchQuery = searchQuery.filter((q) => q.eq(q.field("status"), args.status));
     }
 
-    const results = await searchQuery.take(50);
-
-    // Get additional details
-    const artworksWithDetails = await Promise.all(
-      results.map(async (artwork) => {
-        const imageUrls = await Promise.all(
-          artwork.images.map(async (imageId) => {
-            const url = await ctx.storage.getUrl(imageId as Id<"_storage">);
-            return url;
-          })
-        );
-
-        return {
-          ...artwork,
-          imageUrls: imageUrls.filter(Boolean),
-        };
-      })
-    );
-
-    return artworksWithDetails;
+    return await searchQuery.take(50);
   },
 });
 

@@ -73,7 +73,12 @@ export const ArtCard = ({ artwork }: ArtCardProps) => {
         </div>
         <div className="flex-1" />
         {featured && <Badge className="flex items-center gap-1 bg-yellow-400/80 text-yellow-900"><StarIcon size={14} /> Featured</Badge>}
-        <Badge variant="outline" className="ml-2 text-xs capitalize">{status}</Badge>
+        <Badge 
+          variant={status === 'available' ? 'success' : status==='sold' ? 'secondary' : 'outline'}
+          className="ml-2 text-xs capitalize"
+          >
+            {status}
+        </Badge>
       </div>
 
       {/* Main Image */}
