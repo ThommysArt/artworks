@@ -19,6 +19,7 @@ const geistMono = Geist_Mono({
 
 const spaceMono = Space_Mono({
   variable: "--font-spacemono",
+  subsets: ["latin"],
   weight: ["400", "700"],
 });
 

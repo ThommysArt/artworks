@@ -182,6 +182,8 @@ export const updateArtwork = mutation({
     )),
     featured: v.optional(v.boolean()),
     userId: v.string(),
+    auctionEndTime: v.optional(v.number()),
+    reservePrice: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const { userId } = args;
@@ -200,8 +202,15 @@ export const updateArtwork = mutation({
     if (args.title !== undefined) updates.title = args.title;
     if (args.description !== undefined) updates.description = args.description;
     if (args.price !== undefined) updates.price = args.price;
-    if (args.status !== undefined) updates.status = args.status;
+    if (args.status !== undefined) {
+      updates.status = args.status;
+      if (args.status === "auction") {
+        updates.isAuction = true;
+      }
+    }
     if (args.featured !== undefined) updates.featured = args.featured;
+    if (args.auctionEndTime !== undefined) updates.auctionEndTime = args.auctionEndTime;
+    if (args.reservePrice !== undefined) updates.reservePrice = args.reservePrice;
 
     await ctx.db.patch(args.id, updates);
     return args.id;
