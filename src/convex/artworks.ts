@@ -7,7 +7,7 @@ export const getArtworks = query({
   args: {
     category: v.optional(v.string()),
     status: v.optional(v.string()),
-    artistId: v.optional(v.id("users")),
+    artistId: v.optional(v.string()),
     featured: v.optional(v.boolean()),
     limit: v.optional(v.number()),
     cursor: v.optional(v.string()),
