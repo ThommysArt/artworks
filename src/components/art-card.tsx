@@ -11,6 +11,7 @@ import { api } from '@/convex/_generated/api';
 import { NewAuctionDialog } from './new-auction-dialog';
 import { NewExhibitionDialog } from './new-exhibition-dialog';
 import { Id } from '@/convex/_generated/dataModel';
+import { toast } from 'sonner';
 
 interface ArtCardProps {
     artwork: {
@@ -82,6 +83,7 @@ export const ArtCard = ({ artwork }: ArtCardProps) => {
   const handleDelete = async () => {
     if (!_id) return;
     await deleteArtwork({ id: _id as Id<"artworks">, userId: userId! });
+    toast.success('Artwork deleted successfully');
     setShowDeleteDialog(false);
     // Optionally, trigger a refresh or callback
   };

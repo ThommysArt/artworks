@@ -31,9 +31,9 @@ export default function ArtworksFeedPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-2 lg:px-0 flex flex-col gap-6 py-8">
+    <div className="px-2 lg:px-0 flex flex-col gap-6 py-8">
       {/* Search Bar */}
-      <form onSubmit={handleSearch} className="flex gap-2 mb-4">
+      <form onSubmit={handleSearch} className="flex gap-2 mb-4 max-w-2xl mx-auto">
         <Input
           placeholder="Search artworks..."
           value={search}
@@ -75,7 +75,7 @@ export default function ArtworksFeedPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="flex flex-col gap-6"
+            className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
           >
             {feed.map((artwork: any) => (
               <ArtCard key={artwork._id} artwork={artwork} />

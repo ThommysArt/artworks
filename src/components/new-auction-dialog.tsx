@@ -9,6 +9,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { useUser } from "@clerk/nextjs";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Input } from "./ui/input";
+import { toast } from "sonner";
 
 interface NewAuctionDialogProps {
   artworkId: Id<"artworks">;
@@ -42,6 +43,7 @@ export function NewAuctionDialog({ artworkId, trigger, onSuccess, open, onOpenCh
       auctionEndTime: values.auctionEndTime ? values.auctionEndTime.getTime() : undefined,
       reservePrice: values.reservePrice ? Number(values.reservePrice) : undefined,
     });
+    toast.success('Auction started successfully');
     setDialogOpen(false);
     onSuccess?.();
   };

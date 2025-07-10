@@ -10,6 +10,7 @@ import { useMutation } from "convex/react";
 import { Id } from "@/convex/_generated/dataModel";
 import { useUser } from "@clerk/nextjs";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { toast } from "sonner";
 
 interface NewExhibitionDialogProps {
   artworkId: Id<"artworks">;
@@ -75,6 +76,7 @@ export function NewExhibitionDialog({ artworkId, trigger, onSuccess, open, onOpe
       },
       artworkIds: [artworkId],
     });
+    toast.success('Exhibition created successfully');
     setDialogOpen(false);
     form.reset();
     onSuccess?.();
