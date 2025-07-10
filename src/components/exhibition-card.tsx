@@ -12,7 +12,7 @@ function getCountdown(startDate: number, endDate: number) {
 }
 
 const ExhibitionCard = ({ exhibition }: { exhibition: any }) => {
-  const { title, coverImageUrl, startDate, endDate, location, artworkCount, status } = exhibition;
+  const { title, coverImage: coverImageUrl, startDate, endDate, location, artworkCount, status } = exhibition;
   const countdown = getCountdown(startDate, endDate);
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-lg shadow p-4 flex flex-col gap-3 border border-zinc-200 dark:border-zinc-800">

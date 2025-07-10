@@ -37,17 +37,11 @@ export const getExhibitions = query({
     // Get curator info and cover image URLs
     const exhibitionsWithDetails = await Promise.all(
       exhibitions.map(async (exhibition) => {
-        let coverImageUrl = null;
-        if (exhibition.coverImage) {
-          coverImageUrl = await ctx.storage.getUrl(exhibition.coverImage);
-        }
-
         // Get artwork count
         const artworkCount = exhibition.artworkIds.length;
 
         return {
           ...exhibition,
-          coverImageUrl,
           artworkCount,
         };
       })

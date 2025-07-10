@@ -34,9 +34,9 @@ export const placeBid = mutation({
     }
 
     // Check if user is not the artist
-    if (artwork.artistId === userId) {
-      throw new Error("Artists cannot bid on their own artworks");
-    }
+    // if (artwork.artistId === userId) {
+    //   throw new Error("Artists cannot bid on their own artworks");
+    // }
 
     // Mark previous winning bids as not winning
     const previousBids = await ctx.db
@@ -196,18 +196,10 @@ export const getActiveAuctions = query({
 
     const auctionsWithDetails = await Promise.all(
       auctions.map(async (artwork) => {
-        const imageUrls = await Promise.all(
-          artwork.images.slice(0, 1).map(async (imageId) => {
-            const url = await ctx.storage.getUrl(imageId);
-            return url;
-          })
-        );
-
         const timeRemaining = artwork.auctionEndTime ? artwork.auctionEndTime - now : 0;
 
         return {
           ...artwork,
-          imageUrls: imageUrls.filter(Boolean),
           timeRemaining,
         };
       })
