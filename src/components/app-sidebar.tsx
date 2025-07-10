@@ -25,7 +25,7 @@ export const AppSidebar = () => {
         <Sidebar collapsible="icon" variant="floating">
         <SidebarHeader>
             <div className="flex items-center justify-center gap-2 p-4">
-                <span className="text-2xl font-semibold">Fallart</span>
+                <span className="text-2xl font-semibold">ArtSpace</span>
             </div>
         </SidebarHeader>
         <SidebarContent>

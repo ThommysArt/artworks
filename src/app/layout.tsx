@@ -24,7 +24,7 @@ const spaceMono = Space_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fallart",
+  title: "ArtSpace",
   description: "Built By Ngum Precious",
 };
 
@@ -42,9 +42,10 @@ export default function RootLayout({
           <ConvexClientProvider>
             <ThemeProvider
               attribute="class"
-              defaultTheme="system"
-              enableSystem
+              defaultTheme="light"
+              enableSystem={false}
               disableTransitionOnChange
+              forcedTheme="light"
             >
               {children}
               <Toaster />
