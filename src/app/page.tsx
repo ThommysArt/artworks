@@ -94,7 +94,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Palette className="h-8 w-8 text-black" />
-              <span className="text-xl font-bold text-black font-serif">ArtSpace</span>
+              <span className="text-xl font-bold text-black font-serif">ArtSphere</span>
             </div>
             
             <div className="hidden md:flex items-center space-x-8 tracking-tighter">
