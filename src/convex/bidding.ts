@@ -30,7 +30,7 @@ export const placeBid = mutation({
     // Check if bid is higher than current bid
     const currentHighestBid = artwork.currentBid || artwork.reservePrice || 0;
     if (args.amount <= currentHighestBid) {
-      throw new Error(`Bid must be higher than current bid of $${currentHighestBid}`);
+      throw new Error(`Bid must be higher than current bid of ${currentHighestBid} FCFA`);
     }
 
     // Check if user is not the artist

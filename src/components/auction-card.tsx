@@ -45,7 +45,7 @@ const AuctionCard = ({ auction }: { auction: any }) => {
 
     const minimumBid = Math.max(currentBid || 0, reservePrice || 0) + 1;
     if (amount < minimumBid) {
-      toast.error(`Bid must be at least $${minimumBid}`);
+      toast.error(`Bid must be at least ${minimumBid} FCFA`);
       return;
     }
 
@@ -57,7 +57,7 @@ const AuctionCard = ({ auction }: { auction: any }) => {
         amount: amount,
       });
       
-      toast.success(`Bid placed successfully! Your bid: $${amount.toLocaleString()}`);
+      toast.success(`Bid placed successfully! Your bid: ${amount.toLocaleString()} FCFA`);
       setIsDialogOpen(false);
       setBidAmount("");
     } catch (error: any) {
@@ -93,7 +93,7 @@ const AuctionCard = ({ auction }: { auction: any }) => {
         <div className="text-sm text-zinc-500 dark:text-zinc-400">by {artistName}</div>
         <div className="flex items-center gap-2 mt-1">
           <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
-            Current Bid: ${currentBid?.toLocaleString() ?? 0}
+            Current Bid: {currentBid?.toLocaleString() ?? 0} FCFA
           </span>
           <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
             Ends in {formatTime(timeRemaining)}
@@ -101,7 +101,7 @@ const AuctionCard = ({ auction }: { auction: any }) => {
         </div>
         {reservePrice && (
           <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
-            Reserve: ${reservePrice.toLocaleString()}
+            Reserve: {reservePrice.toLocaleString()} FCFA
           </span>
         )}
         
@@ -117,18 +117,18 @@ const AuctionCard = ({ auction }: { auction: any }) => {
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Bid Amount ($)</label>
+                <label className="text-sm font-medium">Bid Amount (FCFA)</label>
                 <Input
                   type="number"
-                  placeholder={`Minimum: $${minimumBid.toLocaleString()}`}
+                  placeholder={`Minimum: ${minimumBid.toLocaleString()} FCFA`}
                   value={bidAmount}
                   onChange={(e) => setBidAmount(e.target.value)}
                   min={minimumBid}
                   step="0.01"
                 />
                 <p className="text-xs text-zinc-500">
-                  Current bid: ${currentBid?.toLocaleString() ?? 0}
-                  {reservePrice && ` | Reserve: $${reservePrice.toLocaleString()}`}
+                  Current bid: {currentBid?.toLocaleString() ?? 0} FCFA
+                  {reservePrice && ` | Reserve: ${reservePrice.toLocaleString()} FCFA`}
                 </p>
               </div>
               <div className="flex gap-2">

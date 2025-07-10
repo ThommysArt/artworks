@@ -83,7 +83,7 @@ export default function ArtworkDetailPage() {
         transition={{ delay: 0.1, duration: 0.5, ease: 'easeOut' }}
         className="mb-6 flex flex-wrap gap-4 text-zinc-700 dark:text-zinc-300"
       >
-        <span className="font-semibold text-lg">${price.toLocaleString()}</span>
+        <span className="font-semibold text-lg">{price.toLocaleString()} FCFA</span>
         <span className="text-xs">{dimensions.width}×{dimensions.height}{dimensions.depth ? `×${dimensions.depth}` : ''} {dimensions.unit}</span>
         <span className="text-xs">{category}</span>
         <div className="flex flex-wrap gap-1">
@@ -102,8 +102,8 @@ export default function ArtworkDetailPage() {
           className="mb-6 bg-zinc-50 dark:bg-zinc-800 rounded-lg p-4"
         >
           <div className="flex flex-wrap gap-4 items-center">
-            <span className="font-semibold">Current Bid: ${currentBid?.toLocaleString()}</span>
-            <span className="text-xs">Reserve: ${reservePrice?.toLocaleString()}</span>
+            <span className="font-semibold">Current Bid: {currentBid?.toLocaleString()} FCFA</span>
+            <span className="text-xs">Reserve: {reservePrice?.toLocaleString()} FCFA</span>
             <span className="text-xs">Bids: {bidCount}</span>
             {auctionEndTime && <span className="text-xs text-zinc-400">Ends: {new Date(auctionEndTime).toLocaleString()}</span>}
           </div>
@@ -113,7 +113,7 @@ export default function ArtworkDetailPage() {
               <ul className="space-y-1">
                 {bids.map((bid: any, i: number) => (
                   <li key={i} className="flex gap-2 text-xs text-zinc-600 dark:text-zinc-300">
-                    <span>${bid.amount.toLocaleString()}</span>
+                    <span>{bid.amount.toLocaleString()} FCFA</span>
                     <span>by {bid.bidderName || 'Anonymous'}</span>
                   </li>
                 ))}

@@ -6,22 +6,18 @@ import { api } from "@/convex/_generated/api";
 import { useUser, UserProfile } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { ArtCard } from "@/components/art-card";
-import { useTheme } from "next-themes";
-import { dark } from "@clerk/themes";
+import MyAuctions from "./_components/my-auctions";
 
 const ProfilePage = () => {
   const { user } = useUser();
   const userId = user?.id;
   const artworks = useQuery(api.artworks.getArtworks, userId ? { artistId: userId } : "skip") || [];
-  const { resolvedTheme } = useTheme();
-
-  // Only set baseTheme to dark for dark mode, otherwise use Clerk's default (light)
-  const appearance = resolvedTheme === "dark" ? { baseTheme: dark } : {};
 
   return (
     <Tabs defaultValue="artworks" className="w-full max-w-6xl mx-auto mt-8">
       <TabsList>
         <TabsTrigger value="artworks">Artworks</TabsTrigger>
+        <TabsTrigger value="auctions">My Auctions</TabsTrigger>
         <TabsTrigger value="account">Account</TabsTrigger>
       </TabsList>
       <TabsContent value="artworks">
@@ -32,9 +28,12 @@ const ProfilePage = () => {
           ))}
         </div>
       </TabsContent>
+      <TabsContent value="auctions">
+        <MyAuctions />
+      </TabsContent>
       <TabsContent value="account">
         <div className="mt-4">
-          <UserProfile appearance={appearance} />
+          <UserProfile />
         </div>
       </TabsContent>
     </Tabs>

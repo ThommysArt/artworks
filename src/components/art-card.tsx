@@ -67,7 +67,7 @@ export const ArtCard = ({ artwork }: ArtCardProps) => {
   } = artwork;
 
   const mainImage = images && images.length > 0 ? images[0] : '/placeholder-artwork.jpg';
-  const formattedPrice = `$${price.toLocaleString()}`;
+  const formattedPrice = `${price.toLocaleString()} FCFA`;
   const formattedDimensions = `${dimensions.width}×${dimensions.height}${dimensions.depth ? `×${dimensions.depth}` : ''} ${dimensions.unit}`;
   const auctionEnds = isAuction && auctionEndTime ? new Date(auctionEndTime).toLocaleString() : null;
 
@@ -144,7 +144,7 @@ export const ArtCard = ({ artwork }: ArtCardProps) => {
       </div>
 
       {/* Footer: Views, Like Button */}
-      <div className="flex items-center gap-3 mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+      {/* <div className="flex items-center gap-3 mt-2 text-xs text-zinc-500 dark:text-zinc-400">
         <EyeIcon size={14} className="mr-1" /> {views} views
         <button
           type="button"
@@ -153,7 +153,7 @@ export const ArtCard = ({ artwork }: ArtCardProps) => {
         >
           <HeartIcon size={16} />
         </button>
-      </div>
+      </div> */}
 
       {/* Dialogs for actions */}
       {showAuctionDialog && (
