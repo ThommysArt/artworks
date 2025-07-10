@@ -66,20 +66,7 @@ export const getExhibition = query({
     // Get artworks in exhibition
     const artworks = await Promise.all(
       exhibition.artworkIds.map(async (artworkId) => {
-        const artwork = await ctx.db.get(artworkId);
-        if (!artwork) return null;
-
-        const imageUrls = await Promise.all(
-          artwork.images.slice(0, 1).map(async (imageId) => {
-            const url = await ctx.storage.getUrl(imageId);
-            return url;
-          })
-        );
-
-        return {
-          ...artwork,
-          imageUrls: imageUrls.filter(Boolean),
-        };
+        return await ctx.db.get(artworkId);
       })
     );
 

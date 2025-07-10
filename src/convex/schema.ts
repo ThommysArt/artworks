@@ -70,7 +70,7 @@ const applicationTables = {
     })),
     isVirtual: v.boolean(),
     artworkIds: v.array(v.id("artworks")),
-    coverImage: v.optional(v.id("_storage")),
+    coverImage: v.optional(v.string()),
     status: v.union(
       v.literal("upcoming"),
       v.literal("active"),
